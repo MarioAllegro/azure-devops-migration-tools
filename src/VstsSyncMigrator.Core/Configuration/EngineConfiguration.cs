@@ -23,7 +23,7 @@ namespace VstsSyncMigrator.Engine.Configuration
 
         public static EngineConfiguration GetDefault()
         {
-            EngineConfiguration ec = CreateEmptyConfig();
+            var ec = CreateEmptyConfig();
             AddFieldMapps(ec);
             AddWorkItemMigrationDefault(ec);
             AddTestPlansMigrationDefault(ec);
@@ -40,7 +40,7 @@ namespace VstsSyncMigrator.Engine.Configuration
 
         public static EngineConfiguration GetWorkItemMigration()
         {
-            EngineConfiguration ec = CreateEmptyConfig();
+            var ec = CreateEmptyConfig();
             AddFieldMapps(ec);
             AddWorkItemMigrationDefault(ec);
             return ec;
@@ -57,7 +57,7 @@ namespace VstsSyncMigrator.Engine.Configuration
 
         private static EngineConfiguration CreateEmptyConfig()
         {
-            EngineConfiguration ec = new EngineConfiguration();
+            var ec = new EngineConfiguration();
             ec.TelemetryEnableTrace = false;
             ec.Version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(2);
             ec.Source = new TeamProjectConfig() { Project = "migrationSource1", AllowCrossProjectLinking = false, Collection = new Uri("https://dev.azure.com/nkdagility-preview/"), ReflectedWorkItemIDFieldName = "Custom.ReflectedWorkItemId", PersonalAccessToken = "" };
