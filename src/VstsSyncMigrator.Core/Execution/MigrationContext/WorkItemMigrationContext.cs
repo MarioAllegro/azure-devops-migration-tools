@@ -76,13 +76,17 @@ namespace VstsSyncMigrator.Engine
                 "System.HyperLinkCount",
                 "System.Watermark",
                 "System.AuthorizedDate",
-                "System.BoardColumn",
-                "System.BoardColumnDone",
-                "System.BoardLane",
                 "SLB.SWT.DateOfClientFeedback",
                 "System.CommentCount",
                 "System.RemoteLinkCount"
             };
+
+            if (!_config.IsKanbanBoard)
+            {
+                _ignore.Add("System.BoardColumn");
+                _ignore.Add("System.BoardColumnDone");
+                _ignore.Add("System.BoardLane");
+            }
         }
 
         public override string Name => "WorkItemMigration";

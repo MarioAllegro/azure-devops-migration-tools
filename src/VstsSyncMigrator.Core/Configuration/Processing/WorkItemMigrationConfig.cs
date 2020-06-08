@@ -35,6 +35,7 @@ namespace VstsSyncMigrator.Engine.Configuration.Processing
         public bool PauseAfterEachWorkItem { get; set; }
         public int AttachmentMaxSize { get; set; }
         public bool CollapseRevisions { get; set; }
+        public bool IsKanbanBoard { get; set; }
 
         /// <inheritdoc />
         public bool IsProcessorCompatible(IReadOnlyList<ITfsProcessingConfig> otherProcessors)
@@ -48,6 +49,7 @@ namespace VstsSyncMigrator.Engine.Configuration.Processing
         public WorkItemMigrationConfig()
         {
             Enabled = false;
+            IsKanbanBoard = false;
             WorkItemCreateRetryLimit = 5;
             FilterWorkItemsThatAlreadyExistInTarget = true;
             ReplayRevisions = true;
