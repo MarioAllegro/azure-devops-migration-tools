@@ -52,7 +52,7 @@ namespace VstsSyncMigrator.Engine
             _witClient = new WorkItemTrackingHttpClient(me.Target.Collection.Uri, adoCreds);
 
             var workItemServer = me.Source.Collection.GetService<WorkItemServer>();
-            attachmentOMatic = new AttachmentOMatic(workItemServer, config.AttachmentWorkingPath, config.AttachmentMazSize);
+            attachmentOMatic = new AttachmentOMatic(workItemServer, config.AttachmentWorkingPath, config.AttachmentMaxSize);
             repoOMatic = new RepoOMatic(me);
         }
 
