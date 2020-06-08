@@ -14,7 +14,7 @@ using VstsSyncMigrator.Engine.Configuration.Processing;
 
 namespace VstsSyncMigrator.Core.Execution.OMatics
 {
-    class EmbededImagesRepairOMatic
+    internal class EmbededImagesRepairOMatic
     {
 
         private readonly HttpClientHandler _httpClientHandler;
@@ -32,35 +32,37 @@ namespace VstsSyncMigrator.Core.Execution.OMatics
         {
 
             Debug.WriteLine($"Searching for urls: {oldTfsurl} and {GetUrlWithOppositeSchema(oldTfsurl)}");
-            bool wiUpdated = false;
-            bool hasCandidates = false;
+            var wiUpdated = false;
+            var hasCandidates = false;
 
             var oldTfsurlOppositeSchema = GetUrlWithOppositeSchema(oldTfsurl);
-            string regExSearchForImageUrl = "(?<=<img.*src=\")[^\"]*";
+            var regExSearchForImageUrl = "(?<=<img.*src=\")[^\"]*";
 
             foreach (Field field in wi.Fields)
             {
                 if (field.FieldDefinition.FieldType == FieldType.Html)
                 {
-                    MatchCollection matches = Regex.Matches((string)field.Value, regExSearchForImageUrl);
+                    var matches = Regex.Matches((string)field.Value, regExSearchForImageUrl);
 
-                    string regExSearchFileName = "(?<=FileName=)[^=]*";
+                    var regExSearchFileName = "(?<=FileName=)[^=]*";
                     foreach (Match match in matches)
                     {
                         if (match.Value.ToLower().Contains(oldTfsurl.ToLower()) || match.Value.ToLower().Contains(oldTfsurlOppositeSchema.ToLower()) )
                         {
                             //save image locally and upload as attachment
-                            Match newFileNameMatch = Regex.Match(match.Value, regExSearchFileName, RegexOptions.IgnoreCase);
+                            var newFileNameMatch = Regex.Match(match.Value, regExSearchFileName, RegexOptions.IgnoreCase);
                             if (newFileNameMatch.Success)
                             {
                                 Trace.WriteLine($"field '{field.Name}' has match: {System.Net.WebUtility.HtmlDecode(match.Value)}");
-                                string fullImageFilePath = Path.GetTempPath() + newFileNameMatch.Value;
+                                var fullImageFilePath = Path.GetTempPath() + newFileNameMatch.Value;
 
                                 using (var httpClient = new HttpClient(_httpClientHandler, false))
                                 {
                                     if (!string.IsNullOrEmpty(sourcePersonalAccessToken))
                                     {
-                                        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(System.Text.ASCIIEncoding.ASCII.GetBytes(string.Format("{0}:{1}", "", sourcePersonalAccessToken))));
+                                        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(System.Text.ASCIIEncoding.ASCII.GetBytes(
+                                            $"{""}:{sourcePersonalAccessToken}"
+                                        )));
                                     }
                                     var result = DownloadFile(httpClient, match.Value, fullImageFilePath);
                                     if (!result.IsSuccessStatusCode)
@@ -82,7 +84,7 @@ namespace VstsSyncMigrator.Core.Execution.OMatics
                                     throw new Exception($"Downloaded image [{fullImageFilePath}] from Work Item [{wi.Id}] Field: [{field.Name}] could not be identified as an image. Authentication issue?");
                                 }
 
-                                int attachmentIndex = wi.Attachments.Add(new Attachment(fullImageFilePath));
+                                var attachmentIndex = wi.Attachments.Add(new Attachment(fullImageFilePath));
                                 wi.Save();
 
                                 var newImageLink = wi.Attachments[attachmentIndex].Uri.ToString();

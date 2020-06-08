@@ -50,37 +50,40 @@ namespace VstsSyncMigrator.Engine
 
         internal override void InternalExecute()
         {
-            Stopwatch stopwatch = Stopwatch.StartNew();
+            var stopwatch = Stopwatch.StartNew();
 			//////////////////////////////////////////////////
-			WorkItemStoreContext sourceStore = new WorkItemStoreContext(me.Source, WorkItemStoreFlags.None);
-            TfsQueryContext tfsqc = new TfsQueryContext(sourceStore);
+			var sourceStore = new WorkItemStoreContext(me.Source, WorkItemStoreFlags.None);
+            var tfsqc = new TfsQueryContext(sourceStore);
             tfsqc.AddParameter("TeamProject", me.Source.Config.Project);
 
             //Builds the constraint part of the query
-            string constraints = BuildQueryBitConstraints();
+            var constraints = BuildQueryBitConstraints();
 
-            tfsqc.Query = string.Format(@"SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = @TeamProject {0} ORDER BY [System.Id] ", constraints);
+            tfsqc.Query =
+                $@"SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = @TeamProject {constraints} ORDER BY [System.Id] ";
 
-            WorkItemCollection sourceWIS = tfsqc.Execute();
-            Trace.WriteLine(string.Format("Migrate {0} work items?", sourceWIS.Count));
+            var sourceWIS = tfsqc.Execute();
+            Trace.WriteLine($"Migrate {sourceWIS.Count} work items?");
             //////////////////////////////////////////////////
-            WorkItemStoreContext targetStore = new WorkItemStoreContext(me.Target, WorkItemStoreFlags.BypassRules);
-            Project destProject = targetStore.GetProject();
-            Trace.WriteLine(string.Format("Found target project as {0}", destProject.Name));
+            var targetStore = new WorkItemStoreContext(me.Target, WorkItemStoreFlags.BypassRules);
+            var destProject = targetStore.GetProject();
+            Trace.WriteLine($"Found target project as {destProject.Name}");
 
 
-            int current = sourceWIS.Count;
-            int count = 0;
+            var current = sourceWIS.Count;
+            var count = 0;
             long elapsedms = 0;
             foreach (WorkItem sourceWI in sourceWIS)
             {
-                Stopwatch witstopwatch = Stopwatch.StartNew();
+                var witstopwatch = Stopwatch.StartNew();
 				WorkItem targetFound;
                 targetFound = targetStore.FindReflectedWorkItem(sourceWI, false);
-                Trace.WriteLine(string.Format("{0} - Updating: {1}-{2}", current, sourceWI.Id, sourceWI.Type.Name));
+                Trace.WriteLine($"{current} - Updating: {sourceWI.Id}-{sourceWI.Type.Name}");
                 if (targetFound == null)
                 {
-                    Trace.WriteLine(string.Format("{0} - WARNING: does not exist {1}-{2}", current, sourceWI.Id, sourceWI.Type.Name));
+                    Trace.WriteLine(
+                        $"{current} - WARNING: does not exist {sourceWI.Id}-{sourceWI.Type.Name}"
+                    );
                 }
                 else
                 {
@@ -97,7 +100,7 @@ namespace VstsSyncMigrator.Engine
                         catch (ValidationException ve)
                         {
 
-                            Trace.WriteLine(string.Format("          [FAILED] {0}", ve.ToString()));
+                            Trace.WriteLine($"          [FAILED] {ve.ToString()}");
                         }
 
                     }
@@ -111,9 +114,11 @@ namespace VstsSyncMigrator.Engine
                 elapsedms = elapsedms + witstopwatch.ElapsedMilliseconds;
                 current--;
                 count++;
-                TimeSpan average = new TimeSpan(0, 0, 0, 0, (int)(elapsedms / count));
-                TimeSpan remaining = new TimeSpan(0, 0, 0, 0, (int)(average.TotalMilliseconds * current));
-                Trace.WriteLine(string.Format("Average time of {0} per work item and {1} estimated to completion", string.Format(@"{0:s\:fff} seconds", average), string.Format(@"{0:%h} hours {0:%m} minutes {0:s\:fff} seconds", remaining)));
+                var average = new TimeSpan(0, 0, 0, 0, (int)(elapsedms / count));
+                var remaining = new TimeSpan(0, 0, 0, 0, (int)(average.TotalMilliseconds * current));
+                Trace.WriteLine(
+                    $"Average time of {$@"{average:s\:fff} seconds"} per work item and {string.Format(@"{0:%h} hours {0:%m} minutes {0:s\:fff} seconds", remaining)} estimated to completion"
+                );
             }
             //////////////////////////////////////////////////
             stopwatch.Stop();
@@ -122,17 +127,18 @@ namespace VstsSyncMigrator.Engine
 
         private string BuildQueryBitConstraints()
         {
-            string constraints = "";
+            var constraints = "";
 
             if (_config.WorkItemIDs != null && _config.WorkItemIDs.Count > 0)
             {
                 if (_config.WorkItemIDs.Count == 1)
                 {
-                    constraints += string.Format(" AND [System.Id] = {0} ", _config.WorkItemIDs[0]);
+                    constraints += $" AND [System.Id] = {_config.WorkItemIDs[0]} ";
                 }
                 else
                 {
-                    constraints += string.Format(" AND [System.Id] IN ({0}) ", string.Join(",", _config.WorkItemIDs));
+                    constraints +=
+                        $" AND [System.Id] IN ({string.Join(",", _config.WorkItemIDs)}) ";
                 }
             }
 
@@ -140,16 +146,18 @@ namespace VstsSyncMigrator.Engine
             {
                 if (_me.WorkItemTypeDefinitions.Count == 1)
                 {
-                    constraints += string.Format(" AND [System.WorkItemType] = '{0}' ", _me.WorkItemTypeDefinitions.Keys.First());
+                    constraints +=
+                        $" AND [System.WorkItemType] = '{_me.WorkItemTypeDefinitions.Keys.First()}' ";
                 }
                 else
                 {
-                    constraints += string.Format(" AND [System.WorkItemType] IN ('{0}') ", string.Join("','", _me.WorkItemTypeDefinitions.Keys));
+                    constraints +=
+                        $" AND [System.WorkItemType] IN ('{string.Join("','", _me.WorkItemTypeDefinitions.Keys)}') ";
                 }
             }
 
 
-            if (!String.IsNullOrEmpty(_config.QueryBit))
+            if (!string.IsNullOrEmpty(_config.QueryBit))
             {
                 constraints += _config.QueryBit;
             }

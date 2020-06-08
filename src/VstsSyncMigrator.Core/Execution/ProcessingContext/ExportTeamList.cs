@@ -33,26 +33,28 @@ namespace VstsSyncMigrator.Engine
 
         internal override void InternalExecute()
         {
-            Stopwatch stopwatch = Stopwatch.StartNew();
+            var stopwatch = Stopwatch.StartNew();
 			//////////////////////////////////////////////////
 			// Retrieve the project URI. Needed to enumerate teams.     
 			var css4 = me.Target.Collection.GetService<ICommonStructureService4>();
-            ProjectInfo projectInfo = css4.GetProjectFromName(me.Target.Config.Project);
+            var projectInfo = css4.GetProjectFromName(me.Target.Config.Project);
             // Retrieve a list of all teams on the project.     
-            TfsTeamService teamService = me.Target.Collection.GetService<TfsTeamService>();
+            var teamService = me.Target.Collection.GetService<TfsTeamService>();
 
-            foreach (ProjectInfo p in css4.ListAllProjects())
+            foreach (var p in css4.ListAllProjects())
             {
                 var allTeams = teamService.QueryTeams(p.Uri);
 
-                foreach (TeamFoundationTeam team in allTeams)
+                foreach (var team in allTeams)
                 {
-                    Trace.WriteLine(string.Format("Team name: {0}", team.Name), p.Name);
-                    Trace.WriteLine(string.Format("Team ID: {0}", team.Identity.TeamFoundationId.ToString()), p.Name);
-                    Trace.WriteLine(string.Format("Description: {0}", team.Description), p.Name);
+                    Trace.WriteLine($"Team name: {team.Name}", p.Name);
+                    Trace.WriteLine($"Team ID: {team.Identity.TeamFoundationId.ToString()}", p.Name);
+                    Trace.WriteLine($"Description: {team.Description}", p.Name);
                     var members =  team.GetMembers(me.Target.Collection, MembershipQuery.Direct);
-                    Trace.WriteLine(string.Format("Team Accounts: {0}", String.Join(";", (from member in team.GetMembers(me.Target.Collection, MembershipQuery.Direct) select member.UniqueName))), p.Name);
-                    Trace.WriteLine(string.Format("Team names: {0}", String.Join(";", (from member in team.GetMembers(me.Target.Collection, MembershipQuery.Direct) select member.DisplayName))), p.Name);
+                    Trace.WriteLine(
+                        $"Team Accounts: {string.Join(";", (from member in team.GetMembers(me.Target.Collection, MembershipQuery.Direct) select member.UniqueName))}", p.Name);
+                    Trace.WriteLine(
+                        $"Team names: {string.Join(";", (from member in team.GetMembers(me.Target.Collection, MembershipQuery.Direct) select member.DisplayName))}", p.Name);
                 }
             }
 

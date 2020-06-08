@@ -22,7 +22,7 @@ namespace VstsSyncMigrator.Engine
         //private readonly TfsTeamService teamService;
         //private readonly ProjectInfo projectInfo;
         private readonly IIdentityManagementService2 ims2;
-        ExportProfilePictureFromADConfig config;
+        private ExportProfilePictureFromADConfig config;
 
         public override string Name
         {
@@ -41,10 +41,10 @@ namespace VstsSyncMigrator.Engine
 
         internal override void InternalExecute()
         {
-            Stopwatch stopwatch = Stopwatch.StartNew();
+            var stopwatch = Stopwatch.StartNew();
 			//////////////////////////////////////////////////
 			string exportPath;
-            string assPath = System.Reflection.Assembly.GetExecutingAssembly().Location;
+            var assPath = System.Reflection.Assembly.GetExecutingAssembly().Location;
             exportPath = Path.Combine(Path.GetDirectoryName(assPath), "export-pic");
             if (!Directory.Exists(exportPath))
             {
@@ -52,44 +52,47 @@ namespace VstsSyncMigrator.Engine
             }
 
 
-            TeamFoundationIdentity SIDS = ims2.ReadIdentity(IdentitySearchFactor.AccountName, "Team Foundation Valid Users", MembershipQuery.Expanded, ReadIdentityOptions.None);
+            var SIDS = ims2.ReadIdentity(IdentitySearchFactor.AccountName, "Team Foundation Valid Users", MembershipQuery.Expanded, ReadIdentityOptions.None);
 
-            Trace.WriteLine(string.Format("Found {0}", SIDS.Members.Count()));
+            Trace.WriteLine($"Found {SIDS.Members.Count()}");
             var itypes = (from IdentityDescriptor id in SIDS.Members select id.IdentityType).Distinct();
 
-            foreach (string item in itypes)
+            foreach (var item in itypes)
             {
                 var infolks = (from IdentityDescriptor id in SIDS.Members where id.IdentityType == item select id);
-                Trace.WriteLine(string.Format("Found {0} of {1}", infolks.Count(), item));
+                Trace.WriteLine($"Found {infolks.Count()} of {item}");
             }
             var folks = (from IdentityDescriptor id in SIDS.Members where id.IdentityType == "System.Security.Principal.WindowsIdentity" select id);
 
-            DirectoryContext objContext = new DirectoryContext(DirectoryContextType.Domain, config.Domain, config.Username, config.Password);
-            Domain objDomain = Domain.GetDomain(objContext);
-            string ldapName = string.Format("LDAP://{0}", objDomain.Name);
+            var objContext = new DirectoryContext(DirectoryContextType.Domain, config.Domain, config.Username, config.Password);
+            var objDomain = Domain.GetDomain(objContext);
+            var ldapName = $"LDAP://{objDomain.Name}";
 
-            int current = folks.Count();
-            foreach (IdentityDescriptor id in folks)
+            var current = folks.Count();
+            foreach (var id in folks)
             {
                 try
                 {
-                    TeamFoundationIdentity i = ims2.ReadIdentity(IdentitySearchFactor.Identifier, id.Identifier, MembershipQuery.Direct, ReadIdentityOptions.None);
+                    var i = ims2.ReadIdentity(IdentitySearchFactor.Identifier, id.Identifier, MembershipQuery.Direct, ReadIdentityOptions.None);
                     if (!(i == null) && i.IsContainer == false)
                     {
-                        DirectoryEntry d = new DirectoryEntry(ldapName, config.Username, config.Password);
-                        DirectorySearcher dssearch = new DirectorySearcher(d);
-                        dssearch.Filter = string.Format("(sAMAccountName={0})", i.UniqueName.Split(char.Parse(@"\"))[1]);
-                        SearchResult sresult = dssearch.FindOne();
-                        WebClient webClient = new WebClient();
+                        var d = new DirectoryEntry(ldapName, config.Username, config.Password);
+                        var dssearch = new DirectorySearcher(d);
+                        dssearch.Filter =
+                            $"(sAMAccountName={i.UniqueName.Split(char.Parse(@"\"))[1]})";
+                        var sresult = dssearch.FindOne();
+                        var webClient = new WebClient();
                         webClient.Credentials = CredentialCache.DefaultNetworkCredentials;
                         if (sresult != null)
                         {
-                            string newImage = Path.Combine(exportPath, string.Format("{0}.jpg", i.UniqueName.Replace(@"\", "-")));
+                            var newImage = Path.Combine(exportPath,
+                                $"{i.UniqueName.Replace(@"\", "-")}.jpg"
+                            );
                             if (!File.Exists(newImage))
                             {
-                                DirectoryEntry deUser = new DirectoryEntry(sresult.Path, config.Username, config.Password);
-                                Trace.WriteLine(string.Format("{0} [PROCESS] {1}: {2}", current, deUser.Name, newImage));
-                                string empPic = string.Format(config.PictureEmpIDFormat, deUser.Properties["employeeNumber"].Value);
+                                var deUser = new DirectoryEntry(sresult.Path, config.Username, config.Password);
+                                Trace.WriteLine($"{current} [PROCESS] {deUser.Name}: {newImage}");
+                                var empPic = string.Format(config.PictureEmpIDFormat, deUser.Properties["employeeNumber"].Value);
                                 try
                                 {
 
@@ -97,13 +100,13 @@ namespace VstsSyncMigrator.Engine
                                 }
                                 catch (Exception ex)
                                 {
-                                    Trace.WriteLine(string.Format("      [ERROR] {0}", ex.ToString()));
+                                    Trace.WriteLine($"      [ERROR] {ex.ToString()}");
 
                                 }
                             }
                             else
                             {
-                                Trace.WriteLine(string.Format("{0} [SKIP] Exists {1}", current, newImage));
+                                Trace.WriteLine($"{current} [SKIP] Exists {newImage}");
                             }
                         }
                         webClient.Dispose();
@@ -112,7 +115,7 @@ namespace VstsSyncMigrator.Engine
                 }
                 catch (Exception ex)
                 {
-                    Trace.WriteLine(string.Format("      [ERROR] {0}", ex.ToString()));
+                    Trace.WriteLine($"      [ERROR] {ex.ToString()}");
                 }
 
                 current--;

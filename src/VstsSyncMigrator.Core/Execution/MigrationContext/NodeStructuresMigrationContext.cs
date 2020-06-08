@@ -10,7 +10,7 @@ namespace VstsSyncMigrator.Engine
 {
     public class NodeStructuresMigrationContext : MigrationContextBase
     {
-        NodeStructuresMigrationConfig config;
+        private NodeStructuresMigrationConfig config;
 
         public override string Name
         {
@@ -28,11 +28,11 @@ namespace VstsSyncMigrator.Engine
         internal override void InternalExecute()
         {
             //////////////////////////////////////////////////
-            ICommonStructureService sourceCss = (ICommonStructureService)me.Source.Collection.GetService(typeof(ICommonStructureService));
-            ProjectInfo sourceProjectInfo = sourceCss.GetProjectFromName(me.Source.Config.Project);
-            NodeInfo[] sourceNodes = sourceCss.ListStructures(sourceProjectInfo.Uri);
+            var sourceCss = (ICommonStructureService)me.Source.Collection.GetService(typeof(ICommonStructureService));
+            var sourceProjectInfo = sourceCss.GetProjectFromName(me.Source.Config.Project);
+            var sourceNodes = sourceCss.ListStructures(sourceProjectInfo.Uri);
             //////////////////////////////////////////////////
-            ICommonStructureService targetCss = (ICommonStructureService)me.Target.Collection.GetService(typeof(ICommonStructureService4));
+            var targetCss = (ICommonStructureService)me.Target.Collection.GetService(typeof(ICommonStructureService4));
 
             //////////////////////////////////////////////////
             ProcessCommonStructure("Area", sourceNodes, targetCss, sourceCss);
@@ -43,9 +43,11 @@ namespace VstsSyncMigrator.Engine
 
         private void ProcessCommonStructure(string treeType, NodeInfo[] sourceNodes, ICommonStructureService targetCss, ICommonStructureService sourceCss)
         {
-            NodeInfo sourceNode = (from n in sourceNodes where n.Path.Contains(treeType) select n).Single();
-            XmlElement sourceTree = sourceCss.GetNodesXml(new string[] { sourceNode.Uri }, true);
-            NodeInfo structureParent = targetCss.GetNodeFromPath(string.Format("\\{0}\\{1}", me.Target.Config.Project, treeType));
+            var sourceNode = (from n in sourceNodes where n.Path.Contains(treeType) select n).Single();
+            var sourceTree = sourceCss.GetNodesXml(new string[] { sourceNode.Uri }, true);
+            var structureParent = targetCss.GetNodeFromPath(
+                $"\\{me.Target.Config.Project}\\{treeType}"
+            );
             if (config.PrefixProjectToNodes)
             {
                 structureParent = CreateNode(targetCss, me.Source.Config.Project, structureParent);
@@ -60,7 +62,7 @@ namespace VstsSyncMigrator.Engine
         {
             foreach (XmlNode item in nodeList)
             {
-                string newNodeName = item.Attributes["Name"].Value;
+                var newNodeName = item.Attributes["Name"].Value;
 
                 if (!ShouldCreateNode(parentPath, newNodeName))
                 {
@@ -102,7 +104,7 @@ namespace VstsSyncMigrator.Engine
         /// <returns>true/false</returns>
         private bool ShouldCreateNode(NodeInfo parentPath, string newNodeName)
         {
-            string nodePath = string.Format(@"{0}\{1}", parentPath.Path, newNodeName);
+            var nodePath = $@"{parentPath.Path}\{newNodeName}";
 
             if (config.BasePaths != null && config.BasePaths.Any())
             {
@@ -115,7 +117,7 @@ namespace VstsSyncMigrator.Engine
                 {
                     var splitBase = basePath.Split('\\');
 
-                    for (int i = 0; i < splitBase.Length; i++)
+                    for (var i = 0; i < splitBase.Length; i++)
                     {
                         if (string.Equals(path, string.Join(@"\", splitBase.Take(i)), StringComparison.InvariantCultureIgnoreCase))
                         {
@@ -126,7 +128,7 @@ namespace VstsSyncMigrator.Engine
 
                 if (!config.BasePaths.Any(p => path.StartsWith(p, StringComparison.InvariantCultureIgnoreCase)))
                 {
-                    Trace.WriteLine(string.Format("--IgnoreNode: {0}", nodePath));
+                    Trace.WriteLine($"--IgnoreNode: {nodePath}");
                     return false;
                 }
             }
@@ -136,10 +138,10 @@ namespace VstsSyncMigrator.Engine
 
         private NodeInfo CreateNode(ICommonStructureService css, string name, NodeInfo parent)
         {
-            string nodePath = string.Format(@"{0}\{1}", parent.Path, name);
+            var nodePath = $@"{parent.Path}\{name}";
             NodeInfo node = null;
             
-            Trace.Write(string.Format("--CreateNode: {0}", nodePath));
+            Trace.Write($"--CreateNode: {nodePath}");
             try
             {
                 node = css.GetNodeFromPath(nodePath);
@@ -149,20 +151,22 @@ namespace VstsSyncMigrator.Engine
             {
                 Telemetry.Current.TrackException(ex);
                 Trace.Write("...missing");
-                string newPathUri = css.CreateNode(name, parent.Uri);
+                var newPathUri = css.CreateNode(name, parent.Uri);
                 Trace.Write("...created");
                 node = css.GetNode(newPathUri);
             }
 
-            Trace.WriteLine(String.Empty);
+            Trace.WriteLine(string.Empty);
             return node;
         }
 
         private NodeInfo CreateNode(ICommonStructureService css, string name, NodeInfo parent, DateTime? startDate, DateTime? finishDate)
         {
-            string nodePath = string.Format(@"{0}\{1}", parent.Path, name);
+            var nodePath = $@"{parent.Path}\{name}";
             NodeInfo node = null;
-            Trace.Write(string.Format("--CreateNode: {0}, start date: {1}, finish date: {2}", nodePath, startDate, finishDate));
+            Trace.Write(
+                $"--CreateNode: {nodePath}, start date: {startDate}, finish date: {finishDate}"
+            );
             try
             {
                 node = css.GetNodeFromPath(nodePath);
@@ -172,14 +176,14 @@ namespace VstsSyncMigrator.Engine
             {
                 Telemetry.Current.TrackException(ex);
                 Trace.Write("...missing");
-                string newPathUri = css.CreateNode(name, parent.Uri);
+                var newPathUri = css.CreateNode(name, parent.Uri);
                 Trace.Write("...created");
                 node = css.GetNode(newPathUri);
                 ((ICommonStructureService4)css).SetIterationDates(node.Uri, startDate, finishDate);
                 Trace.Write("...dates assigned");
             }
 
-            Trace.WriteLine(String.Empty);
+            Trace.WriteLine(string.Empty);
             return node;
         }
     }

@@ -55,7 +55,8 @@ namespace VstsSyncMigrator.Engine
 
         public string CreateReflectedWorkItemId(WorkItem wi)
         {
-            return string.Format("{0}/{1}/_workitems/edit/{2}", wi.Store.TeamProjectCollection.Uri.ToString().TrimEnd('/'), wi.Project.Name, wi.Id);
+            return
+                $"{wi.Store.TeamProjectCollection.Uri.ToString().TrimEnd('/')}/{wi.Project.Name}/_workitems/edit/{wi.Id}";
 
         }
         public int GetReflectedWorkItemId(WorkItem wi, string reflectedWotkItemIdField)
@@ -130,7 +131,8 @@ namespace VstsSyncMigrator.Engine
             IEnumerable<WorkItem> QueryWorkItems()
             {
                 TfsQueryContext query = new TfsQueryContext(this);
-                query.Query = string.Format(@"SELECT [System.Id] FROM WorkItems  WHERE [System.TeamProject]=@TeamProject AND [{0}] Contains '@idToFind'", teamProjectContext.Config.ReflectedWorkItemIDFieldName);
+                query.Query =
+                    $@"SELECT [System.Id] FROM WorkItems  WHERE [System.TeamProject]=@TeamProject AND [{teamProjectContext.Config.ReflectedWorkItemIDFieldName}] Contains '@idToFind'";
                 query.AddParameter("idToFind", refId.ToString());
                 query.AddParameter("TeamProject", this.teamProjectContext.Config.Project);
                 foreach(WorkItem wi in query.Execute())
@@ -172,7 +174,7 @@ namespace VstsSyncMigrator.Engine
             TfsQueryContext query = new TfsQueryContext(this);
             StringBuilder queryBuilder  = FindReflectedWorkItemQueryBase(query);
             queryBuilder.Append(" [System.Description] Contains @KeyToFind");
-            query.AddParameter("KeyToFind", string.Format("##REF##{0}##", refId));
+            query.AddParameter("KeyToFind", $"##REF##{refId}##");
             query.Query = queryBuilder.ToString();
             return FindWorkItemByQuery(query);
         }

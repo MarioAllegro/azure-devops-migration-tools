@@ -43,13 +43,15 @@ namespace VstsSyncMigrator.Commands
                 int current = sourceTeamProjects.Count();
                 foreach (CatalogNode sourceTeamProject in sourceTeamProjects)
                 {
-                    Trace.WriteLine(string.Format("---------------{0}\\{1}", current, sourceTeamProjects.Count()));
-                    Trace.WriteLine(string.Format("{0}, {1}", sourceTeamProject.Resource.DisplayName, sourceTeamProject.Resource.Identifier));
+                    Trace.WriteLine($"---------------{current}\\{sourceTeamProjects.Count()}");
+                    Trace.WriteLine(
+                        $"{sourceTeamProject.Resource.DisplayName}, {sourceTeamProject.Resource.Identifier}"
+                    );
                     string projectUri = sourceTeamProject.Resource.Properties["ProjectUri"];
                     TeamFoundationIdentity[] appGroups = sourceIMS2.ListApplicationGroups(projectUri, ReadIdentityOptions.None);
                     foreach (TeamFoundationIdentity appGroup in appGroups.Where(x => !x.DisplayName.EndsWith("\\Project Valid Users")))
                     {
-                        Trace.WriteLine(string.Format("    {0}", appGroup.DisplayName));
+                        Trace.WriteLine($"    {appGroup.DisplayName}");
                         TeamFoundationIdentity sourceAppGroup = sourceIMS2.ReadIdentity(appGroup.Descriptor, MembershipQuery.Expanded, ReadIdentityOptions.None);
                         foreach (IdentityDescriptor child in sourceAppGroup.Members.Where(x => x.IdentityType == "Microsoft.TeamFoundation.Identity"))
                         {
@@ -58,7 +60,9 @@ namespace VstsSyncMigrator.Commands
 
                             if ((string)sourceChildIdentity.GetProperty("SpecialType") == "AzureActiveDirectoryApplicationGroup")
                             {
-                                Trace.WriteLine(string.Format("     Suspected AD Group {0}", sourceChildIdentity.DisplayName));
+                                Trace.WriteLine(
+                                    $"     Suspected AD Group {sourceChildIdentity.DisplayName}"
+                                );
                                 csv.WriteRecord<AzureAdGroupItem>(new AzureAdGroupItem
                                 {
                                     TeamProject = sourceTeamProject.Resource.DisplayName,

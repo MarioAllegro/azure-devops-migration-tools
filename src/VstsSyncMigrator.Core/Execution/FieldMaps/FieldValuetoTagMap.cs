@@ -13,8 +13,7 @@ namespace VstsSyncMigrator.Engine
 
     public class FieldValuetoTagMap : IFieldMap
     {
-
-        readonly FieldValuetoTagMapConfig config;
+        private readonly FieldValuetoTagMapConfig config;
 
         public FieldValuetoTagMap(FieldValuetoTagMapConfig config)
         {
@@ -67,7 +66,9 @@ namespace VstsSyncMigrator.Engine
                     if (newTags != target.Tags)
                     {
                         target.Tags = newTags;
-                        Trace.WriteLine(string.Format("  [UPDATE] field tagged {0}:{1} to {2}:Tag with format of {3}", source.Id, config.sourceField, target.Id, config.formatExpression));
+                        Trace.WriteLine(
+                            $"  [UPDATE] field tagged {source.Id}:{config.sourceField} to {target.Id}:Tag with format of {config.formatExpression}"
+                        );
                     }
                 }
             }

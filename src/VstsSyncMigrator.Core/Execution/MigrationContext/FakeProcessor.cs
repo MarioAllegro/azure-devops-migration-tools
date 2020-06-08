@@ -36,7 +36,7 @@ namespace VstsSyncMigrator.Engine
             tfsqc.AddParameter("TeamProject", me.Source.Config.Project);
             tfsqc.Query = @"SELECT [System.Id] FROM WorkItems WHERE  [System.TeamProject] = @TeamProject ";// AND [System.Id] = 188708 ";
             WorkItemCollection sourceWIS = tfsqc.Execute();
-            Trace.WriteLine(string.Format("Migrate {0} work items?", sourceWIS.Count));
+            Trace.WriteLine($"Migrate {sourceWIS.Count} work items?");
             //////////////////////////////////////////////////
             
             int current = sourceWIS.Count;

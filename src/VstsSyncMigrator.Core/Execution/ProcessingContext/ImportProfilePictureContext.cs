@@ -60,12 +60,12 @@ namespace VstsSyncMigrator.Engine
                 string mess;
                 if (SetProfileImage(ident, file, out mess))
                 {
-                    Trace.WriteLine(string.Format(" [UPDATE] New Profile for : {0} ", ident));
+                    Trace.WriteLine($" [UPDATE] New Profile for : {ident} ");
                     File.Delete(file);
                 }
                 else
                 {
-                    Trace.WriteLine(string.Format(" [FAIL] Unable to set: {0} ", ident));
+                    Trace.WriteLine($" [FAIL] Unable to set: {ident} ");
                 }
     }
             

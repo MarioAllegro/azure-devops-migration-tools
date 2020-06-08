@@ -34,38 +34,38 @@ namespace VstsSyncMigrator.Engine
             TestManagementContext targetTmc = new TestManagementContext(me.Target);
 
             List<ITestVariable> sourceVars = SourceTmc.Project.TestVariables.Query().ToList();
-            Trace.WriteLine(string.Format("Plan to copy {0} Veriables?", sourceVars.Count));
+            Trace.WriteLine($"Plan to copy {sourceVars.Count} Veriables?");
 
             foreach (var sourceVar in sourceVars)
             {
-                Trace.WriteLine(string.Format("Copy: {0}", sourceVar.Name));
+                Trace.WriteLine($"Copy: {sourceVar.Name}");
                 ITestVariable targetVar = GetVar(targetTmc.Project.TestVariables, sourceVar.Name);
                 if (targetVar == null)
                 {
-                    Trace.WriteLine(string.Format("    Need to create: {0}", sourceVar.Name));
+                    Trace.WriteLine($"    Need to create: {sourceVar.Name}");
                     targetVar = targetTmc.Project.TestVariables.Create();
                     targetVar.Name = sourceVar.Name;
                     targetVar.Save();
                 }
                 else
                 {
-                    Trace.WriteLine(string.Format("    Exists: {0}", sourceVar.Name));
+                    Trace.WriteLine($"    Exists: {sourceVar.Name}");
                 }
                 // match values
                 foreach (var sourceVal in sourceVar.AllowedValues)
                 {
-                    Trace.WriteLine(string.Format("    Seeking: {0}", sourceVal.Value));
+                    Trace.WriteLine($"    Seeking: {sourceVal.Value}");
                     ITestVariableValue targetVal = GetVal(targetVar, sourceVal.Value);
                     if (targetVal == null)
                     {
-                        Trace.WriteLine(string.Format("    Need to create: {0}", sourceVal.Value));
+                        Trace.WriteLine($"    Need to create: {sourceVal.Value}");
                         targetVal = targetTmc.Project.TestVariables.CreateVariableValue(sourceVal.Value);
                         targetVar.AllowedValues.Add(targetVal);
                         targetVar.Save();
                     }
                     else
                     {
-                        Trace.WriteLine(string.Format("    Exists: {0}", targetVal.Value));
+                        Trace.WriteLine($"    Exists: {targetVal.Value}");
                     }
                 }
 

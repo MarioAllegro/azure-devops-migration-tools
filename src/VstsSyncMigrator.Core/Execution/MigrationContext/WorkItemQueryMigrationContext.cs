@@ -59,7 +59,7 @@ namespace VstsSyncMigrator.Engine
 
         internal override void InternalExecute()
         {
-            Stopwatch stopwatch = Stopwatch.StartNew();
+            var stopwatch = Stopwatch.StartNew();
 			//////////////////////////////////////////////////
 			var sourceStore = new WorkItemStoreContext(me.Source, WorkItemStoreFlags.None);
             var targetStore = new WorkItemStoreContext(me.Target, WorkItemStoreFlags.None);
@@ -67,7 +67,7 @@ namespace VstsSyncMigrator.Engine
             var sourceQueryHierarchy = sourceStore.Store.Projects[me.Source.Config.Project].QueryHierarchy;
             var targetQueryHierarchy = targetStore.Store.Projects[me.Target.Config.Project].QueryHierarchy;
 
-            Trace.WriteLine(string.Format("Found {0} root level child WIQ folders", sourceQueryHierarchy.Count));
+            Trace.WriteLine($"Found {sourceQueryHierarchy.Count} root level child WIQ folders");
             //////////////////////////////////////////////////
 
             foreach (QueryFolder query in sourceQueryHierarchy)
@@ -111,7 +111,7 @@ namespace VstsSyncMigrator.Engine
                     if (sourceFolder.Path.Count(f => f == '/') == 1)
                     {
                         var targetSharedFolderRoot = (QueryFolder)parentFolder[config.SharedFolderName];
-                        QueryFolder extraFolder = (QueryFolder)targetSharedFolderRoot.FirstOrDefault(q => q.Path == requiredPath);
+                        var extraFolder = (QueryFolder)targetSharedFolderRoot.FirstOrDefault(q => q.Path == requiredPath);
                         if (extraFolder == null)
                         {
                             // we are at the root level on the first pass and need to create the extra folder for the team name
@@ -127,7 +127,7 @@ namespace VstsSyncMigrator.Engine
                 }
 
                 // check if there is a folder of the required name, using the path to make sure it is unique
-                QueryFolder targetFolder = (QueryFolder)parentFolder.FirstOrDefault(q => q.Path == requiredPath);
+                var targetFolder = (QueryFolder)parentFolder.FirstOrDefault(q => q.Path == requiredPath);
                 if (targetFolder != null)
                 {
                     Trace.WriteLine($"Skipping folder '{sourceFolder.Name}' as already exists");
@@ -141,7 +141,7 @@ namespace VstsSyncMigrator.Engine
                 }
 
                 // Process child items
-                foreach (QueryItem sub_query in sourceFolder)
+                foreach (var sub_query in sourceFolder)
                 {
                     if (sub_query.GetType() == typeof(QueryFolder))
                     {
@@ -162,7 +162,7 @@ namespace VstsSyncMigrator.Engine
         /// <param name="targetHierarchy">The object that represents the whole of the target query tree</param>
         /// <param name="query">Query Definition - Contains the Query Details</param>
         /// <param name="QueryFolder">Parent Folder</param>
-        void MigrateQuery(QueryHierarchy targetHierarchy, QueryDefinition query, QueryFolder parentFolder)
+        private void MigrateQuery(QueryHierarchy targetHierarchy, QueryDefinition query, QueryFolder parentFolder)
         {
             if (parentFolder.FirstOrDefault(q => q.Name == query.Name) != null)
             {

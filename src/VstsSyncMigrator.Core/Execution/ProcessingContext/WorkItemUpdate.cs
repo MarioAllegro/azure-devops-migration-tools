@@ -13,8 +13,8 @@ namespace VstsSyncMigrator.Engine
 {
     public class WorkItemUpdate : ProcessingContextBase
     {
-        WorkItemUpdateConfig _config;
-        MigrationEngine _me;
+        private WorkItemUpdateConfig _config;
+        private MigrationEngine _me;
 
         public WorkItemUpdate(MigrationEngine me, WorkItemUpdateConfig config) : base(me, config)
         {
@@ -32,24 +32,27 @@ namespace VstsSyncMigrator.Engine
 
         internal override void InternalExecute()
         {
-            Stopwatch stopwatch = Stopwatch.StartNew();
+            var stopwatch = Stopwatch.StartNew();
 			//////////////////////////////////////////////////
-			WorkItemStoreContext targetStore = new WorkItemStoreContext(me.Target, WorkItemStoreFlags.BypassRules);
+			var targetStore = new WorkItemStoreContext(me.Target, WorkItemStoreFlags.BypassRules);
 
-            TfsQueryContext tfsqc = new TfsQueryContext(targetStore);
+            var tfsqc = new TfsQueryContext(targetStore);
             tfsqc.AddParameter("TeamProject", me.Target.Config.Project);
-            tfsqc.Query = string.Format(@"SELECT [System.Id], [System.Tags] FROM WorkItems WHERE [System.TeamProject] = @TeamProject {0} ORDER BY [System.ChangedDate] desc", _config.QueryBit);
-            WorkItemCollection  workitems = tfsqc.Execute();
-            Trace.WriteLine(string.Format("Update {0} work items?", workitems.Count));
+            tfsqc.Query =
+                $@"SELECT [System.Id], [System.Tags] FROM WorkItems WHERE [System.TeamProject] = @TeamProject {_config.QueryBit} ORDER BY [System.ChangedDate] desc";
+            var  workitems = tfsqc.Execute();
+            Trace.WriteLine($"Update {workitems.Count} work items?");
             //////////////////////////////////////////////////
-            int current = workitems.Count;
-            int count = 0;
+            var current = workitems.Count;
+            var count = 0;
             long elapsedms = 0;
             foreach (WorkItem workitem in workitems)
             {
-                Stopwatch witstopwatch = Stopwatch.StartNew();
+                var witstopwatch = Stopwatch.StartNew();
 				workitem.Open();
-                Trace.WriteLine(string.Format("Processing work item {0} - Type:{1} - ChangedDate:{2} - CreatedDate:{3}", workitem.Id, workitem.Type.Name, workitem.ChangedDate.ToShortDateString(), workitem.CreatedDate.ToShortDateString()));
+                Trace.WriteLine(
+                    $"Processing work item {workitem.Id} - Type:{workitem.Type.Name} - ChangedDate:{workitem.ChangedDate.ToShortDateString()} - CreatedDate:{workitem.CreatedDate.ToShortDateString()}"
+                );
                 _me.ApplyFieldMappings(workitem);
 
                 if (workitem.IsDirty)
@@ -83,9 +86,11 @@ namespace VstsSyncMigrator.Engine
                 elapsedms = elapsedms + witstopwatch.ElapsedMilliseconds;
                 current--;
                 count++;
-                TimeSpan average = new TimeSpan(0, 0, 0, 0, (int)(elapsedms / count));
-                TimeSpan remaining = new TimeSpan(0, 0, 0, 0, (int)(average.TotalMilliseconds * current));
-                Trace.WriteLine(string.Format("Average time of {0} per work item and {1} estimated to completion", string.Format(@"{0:s\:fff} seconds", average), string.Format(@"{0:%h} hours {0:%m} minutes {0:s\:fff} seconds", remaining)));
+                var average = new TimeSpan(0, 0, 0, 0, (int)(elapsedms / count));
+                var remaining = new TimeSpan(0, 0, 0, 0, (int)(average.TotalMilliseconds * current));
+                Trace.WriteLine(
+                    $"Average time of {$@"{average:s\:fff} seconds"} per work item and {string.Format(@"{0:%h} hours {0:%m} minutes {0:s\:fff} seconds", remaining)} estimated to completion"
+                );
             }
             //////////////////////////////////////////////////
             stopwatch.Stop();

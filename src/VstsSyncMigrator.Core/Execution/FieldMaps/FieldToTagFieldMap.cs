@@ -47,7 +47,9 @@ namespace VstsSyncMigrator.Engine
                             newTags.Add(string.Format(config.formatExpression, value));
                         }
                         target.Tags = string.Join(";", newTags.ToArray());
-                        Trace.WriteLine(string.Format("  [UPDATE] field tagged {0}:{1} to {2}:Tag with foramt of {3}", source.Id, this.config.sourceField, target.Id, config.formatExpression));
+                        Trace.WriteLine(
+                            $"  [UPDATE] field tagged {source.Id}:{this.config.sourceField} to {target.Id}:Tag with foramt of {config.formatExpression}"
+                        );
                     }
 
                 }

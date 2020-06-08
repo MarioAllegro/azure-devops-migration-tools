@@ -70,7 +70,7 @@ namespace VstsSyncMigrator.Engine
         internal string NodeStructreSourceToTarget(string input)
         {
             //input = [sourceTeamProject]\[AreaPath]
-            return string.Format("{0}\\{1}", me.Target.Config.Project, input);
+            return $"{me.Target.Config.Project}\\{input}";
 
 
             //Regex r = new Regex(source.Name, RegexOptions.IgnoreCase);

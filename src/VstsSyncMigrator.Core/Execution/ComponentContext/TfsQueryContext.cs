@@ -28,23 +28,23 @@ namespace VstsSyncMigrator.Engine
 
         // Fix for Query SOAP error when passing parameters
         [Obsolete("Temporary work aorund for SOAP issue https://dev.azure.com/nkdagility/migration-tools/_workitems/edit/5066")]
-        string WorkAroundForSOAPError(string query, IDictionary<string, string> parameters)
+        private string WorkAroundForSOAPError(string query, IDictionary<string, string> parameters)
         {
-            foreach (string key in parameters.Keys)
+            foreach (var key in parameters.Keys)
             {
-                string pattern = "'{0}'";
+                var pattern = "'{0}'";
                 if (IsInteger(parameters[key]))
                 {
                     pattern = "{0}";
                 }
-                query = query.Replace(string.Format("@{0}", key), string.Format(pattern, parameters[key]));
+                query = query.Replace($"@{key}", string.Format(pattern, parameters[key]));
             }
             return query;
         }
 
         public bool IsInteger(string maybeInt)
         {
-            int testNumber = 0;
+            var testNumber = 0;
             //Check whether 'first' is integer
             return int.TryParse(maybeInt, out testNumber);
         }
@@ -54,13 +54,14 @@ namespace VstsSyncMigrator.Engine
                 Telemetry.Current.TrackEvent("TfsQueryContext.Execute",parameters);
             
 
-                Debug.WriteLine(string.Format("TfsQueryContext: {0}: {1}", "TeamProjectCollection", storeContext.Store.TeamProjectCollection.Uri.ToString()), "TfsQueryContext");
+                Debug.WriteLine(
+                    $"TfsQueryContext: {"TeamProjectCollection"}: {storeContext.Store.TeamProjectCollection.Uri.ToString()}", "TfsQueryContext");
             WorkItemCollection wc;
             var startTime = DateTime.UtcNow;
-            Stopwatch queryTimer = new Stopwatch();
+            var queryTimer = new Stopwatch();
             foreach (var item in parameters)
             {
-                Debug.WriteLine(string.Format("TfsQueryContext: {0}: {1}", item.Key, item.Value), "TfsQueryContext");
+                Debug.WriteLine($"TfsQueryContext: {item.Key}: {item.Value}", "TfsQueryContext");
             }           
 
             queryTimer.Start();
@@ -79,7 +80,9 @@ namespace VstsSyncMigrator.Engine
                             { "QueryTime", queryTimer.ElapsedMilliseconds },
                           { "QueryCount", wc.Count }
                       });
-                Debug.WriteLine(string.Format(" Query Complete: found {0} work items in {1}ms ", wc.Count, queryTimer.ElapsedMilliseconds));
+                Debug.WriteLine(
+                    $" Query Complete: found {wc.Count} work items in {queryTimer.ElapsedMilliseconds}ms "
+                );
          
         }
             catch (Exception ex)

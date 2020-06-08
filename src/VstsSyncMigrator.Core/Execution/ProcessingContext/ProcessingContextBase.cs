@@ -13,7 +13,7 @@ namespace VstsSyncMigrator.Engine
     public abstract class ProcessingContextBase : ITfsProcessingContext
     {
         internal MigrationEngine me;
-        ProcessingStatus status = ProcessingStatus.None;
+        private ProcessingStatus status = ProcessingStatus.None;
         public MigrationEngine Engine { get { return me; } }
 
         public ProcessingContextBase(MigrationEngine me, ITfsProcessingConfig config)
@@ -34,9 +34,9 @@ namespace VstsSyncMigrator.Engine
         public void Execute()
         {
             Telemetry.Current.TrackPageView(this.Name);
-            Trace.TraceInformation(string.Format("ProcessingContext Start {0} ", Name));
-            Stopwatch executeTimer = Stopwatch.StartNew();
-			DateTime start = DateTime.Now;
+            Trace.TraceInformation($"ProcessingContext Start {Name} ");
+            var executeTimer = Stopwatch.StartNew();
+			var start = DateTime.Now;
             //////////////////////////////////////////////////
             try
             {
@@ -54,7 +54,7 @@ namespace VstsSyncMigrator.Engine
                     new Dictionary<string, double> {
                         { "ProcessingContextTime", executeTimer.ElapsedMilliseconds }
                     });
-                Trace.TraceInformation(string.Format("ProcessingContext Complete {0} ", Name));
+                Trace.TraceInformation($"ProcessingContext Complete {Name} ");
             }
             catch (Exception ex)
             {

@@ -40,7 +40,9 @@ namespace VstsSyncMigrator.Engine.ComponentContext
             foreach (var map in fieldMap)
             {
                 target.Fields[map.Value].Value = source.Fields[map.Key].Value;
-                Trace.WriteLine(string.Format("  [UPDATE] field mapped {0}:{1} to {2}:{3}", source.Id, map.Key, target.Id, map.Value));
+                Trace.WriteLine(
+                    $"  [UPDATE] field mapped {source.Id}:{map.Key} to {target.Id}:{map.Value}"
+                );
             }
         }
     }

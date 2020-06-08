@@ -28,19 +28,19 @@ namespace VstsSyncMigrator.Engine
     public class WorkItemMigrationContext : MigrationContextBase
     {
         private readonly WorkItemMigrationConfig _config;
-        private List<String> _ignore;
+        private List<string> _ignore;
         private WorkItemTrackingHttpClient _witClient;
         private WorkItemLinkOMatic workItemLinkOMatic = new WorkItemLinkOMatic();
         private AttachmentOMatic attachmentOMatic;
         private RepoOMatic repoOMatic;
-        EmbededImagesRepairOMatic embededImagesRepairOMatic = new EmbededImagesRepairOMatic();
-        static int _current = 0;
-        static int _count = 0;
-        static int _failures = 0;
-        static int _imported = 0;
-        static int _skipped = 0;
-        static long _elapsedms = 0;
-        static int _totalWorkItem = 0;
+        private EmbededImagesRepairOMatic embededImagesRepairOMatic = new EmbededImagesRepairOMatic();
+        private static int _current = 0;
+        private static int _count = 0;
+        private static int _failures = 0;
+        private static int _imported = 0;
+        private static int _skipped = 0;
+        private static long _elapsedms = 0;
+        private static int _totalWorkItem = 0;
 
         public WorkItemMigrationContext(MigrationEngine me, WorkItemMigrationConfig config)
             : base(me, config)
@@ -48,7 +48,7 @@ namespace VstsSyncMigrator.Engine
             _config = config;
             PopulateIgnoreList();
 
-            VssClientCredentials adoCreds = new VssClientCredentials();
+            var adoCreds = new VssClientCredentials();
             _witClient = new WorkItemTrackingHttpClient(me.Target.Collection.Uri, adoCreds);
 
             var workItemServer = me.Source.Collection.GetService<WorkItemServer>();
@@ -95,9 +95,7 @@ namespace VstsSyncMigrator.Engine
             var tfsqc = new TfsQueryContext(sourceStore);
             tfsqc.AddParameter("TeamProject", me.Source.Config.Project);
             tfsqc.Query =
-                string.Format(
-                    @"SELECT [System.Id], [System.Tags] FROM WorkItems WHERE [System.TeamProject] = @TeamProject {0} ORDER BY {1}",
-                    _config.QueryBit, _config.OrderBit);
+                $@"SELECT [System.Id], [System.Tags] FROM WorkItems WHERE [System.TeamProject] = @TeamProject {_config.QueryBit} ORDER BY {_config.OrderBit}";
             var sourceQueryResult = tfsqc.Execute();
             var sourceWorkItems = (from WorkItem swi in sourceQueryResult select swi).ToList();
             Trace.WriteLine($"Replay all revisions of {sourceWorkItems.Count} work items?", Name);
@@ -119,7 +117,7 @@ namespace VstsSyncMigrator.Engine
             //Validation: make sure that the ReflectedWorkItemId field name specified in the config exists in the target process, preferably on each work item type.
             ConfigValidation();
 
-            foreach (WorkItem sourceWorkItem in sourceWorkItems)
+            foreach (var sourceWorkItem in sourceWorkItems)
             {
                 ProcessWorkItem(sourceStore, targetStore, destProject, sourceWorkItem, _config.WorkItemCreateRetryLimit);
                 if (_config.PauseAfterEachWorkItem)
@@ -165,7 +163,7 @@ namespace VstsSyncMigrator.Engine
 
 
 
-                List<RevisionItem> revisionsToMigrate = RevisionsToMigrate(sourceWorkItem, targetWorkItem);
+                var revisionsToMigrate = RevisionsToMigrate(sourceWorkItem, targetWorkItem);
                 if (targetWorkItem == null)
                 {
                     targetWorkItem = ReplayRevisions(revisionsToMigrate, sourceWorkItem, null, destProject, sourceStore, _current, targetStore);
@@ -245,10 +243,8 @@ namespace VstsSyncMigrator.Engine
             var average = new TimeSpan(0, 0, 0, 0, (int)(_elapsedms / _current));
             var remaining = new TimeSpan(0, 0, 0, 0, (int)(average.TotalMilliseconds * _count));
             TraceWriteLine(sourceWorkItem,
-                string.Format("Average time of {0} per work item and {1} estimated to completion",
-                    string.Format(@"{0:s\:fff} seconds", average),
-                    string.Format(@"{0:%h} hours {0:%m} minutes {0:s\:fff} seconds", remaining))
-                );
+                $"Average time of {$@"{average:s\:fff} seconds"} per work item and {string.Format(@"{0:%h} hours {0:%m} minutes {0:s\:fff} seconds", remaining)} estimated to completion"
+            );
             Trace.Flush();
             Telemetry.Current.TrackEvent("WorkItemMigrated", processWorkItemParamiters, processWorkItemMetrics);
             Telemetry.Current.TrackRequest("ProcessWorkItem", starttime, witstopwatch.Elapsed, "200", true);
@@ -321,7 +317,7 @@ namespace VstsSyncMigrator.Engine
 
                 var last = sourceStore.GetRevision(sourceWorkItem, revisionsToMigrate.Last().Number);
 
-                string finalDestType = last.Type.Name;
+                var finalDestType = last.Type.Name;
 
                 if (skipToFinalRevisedWorkItemType && me.WorkItemTypeDefinitions.ContainsKey(finalDestType))
                 {
@@ -363,7 +359,7 @@ namespace VstsSyncMigrator.Engine
                     TraceWriteLine(currentRevisionWorkItem, $" Processing Revision [{revision.Number}]");
 
                     // Decide on WIT
-                    string destType = currentRevisionWorkItem.Type.Name;
+                    var destType = currentRevisionWorkItem.Type.Name;
                     if (me.WorkItemTypeDefinitions.ContainsKey(destType))
                     {
                         destType =
@@ -423,7 +419,7 @@ namespace VstsSyncMigrator.Engine
                 {
                     ProcessWorkItemAttachments(sourceWorkItem, targetWorkItem, false);
                     ProcessWorkItemLinks(sourceStore, targetStore, sourceWorkItem, targetWorkItem, false);
-                    string reflectedUri = sourceStore.CreateReflectedWorkItemId(sourceWorkItem);
+                    var reflectedUri = sourceStore.CreateReflectedWorkItemId(sourceWorkItem);
                     if (targetWorkItem.Fields.Contains(me.Target.Config.ReflectedWorkItemIDFieldName))
                     {
 
@@ -474,7 +470,9 @@ namespace VstsSyncMigrator.Engine
             }
             else
             {
-                throw new Exception(string.Format("WARNING: Unable to find '{0}' in the target project. Most likley this is due to a typo in the .json configuration under WorkItemTypeDefinition! ", destType));
+                throw new Exception(
+                    $"WARNING: Unable to find '{destType}' in the target project. Most likley this is due to a typo in the .json configuration under WorkItemTypeDefinition! "
+                );
             }
             newWorkItemTimer.Stop();
             Telemetry.Current.TrackDependency("TeamService", "NewWorkItem", newWorkItemstartTime, newWorkItemTimer.Elapsed, true);
@@ -550,11 +548,11 @@ namespace VstsSyncMigrator.Engine
 
         private static string TraceWriteLineTags(WorkItem sourceWorkItem, WorkItem targetWorkItem = null)
         {
-            string totalWorkItems = _totalWorkItem.ToString();
-            string currentWorkITem = _current.ToString();
-            string sourceWorkItemId = sourceWorkItem.Id.ToString();
-            string sourceRevisionInt = sourceWorkItem.Revision.ToString();
-            string targetWorkItemId = "null";
+            var totalWorkItems = _totalWorkItem.ToString();
+            var currentWorkITem = _current.ToString();
+            var sourceWorkItemId = sourceWorkItem.Id.ToString();
+            var sourceRevisionInt = sourceWorkItem.Revision.ToString();
+            var targetWorkItemId = "null";
             return $"[{sourceWorkItem.Type.Name.PadLeft(20)}][Complete:{currentWorkITem.PadLeft(totalWorkItems.Length)}/{totalWorkItems}][sid:{sourceWorkItemId.PadRight(6)}|Rev:{sourceRevisionInt.PadRight(3)}][tid:{targetWorkItemId.PadRight(6)}";
         }
 
@@ -563,12 +561,7 @@ namespace VstsSyncMigrator.Engine
             var targetQuery = new TfsQueryContext(targetStore);
             targetQuery.AddParameter("TeamProject", me.Target.Config.Project);
             targetQuery.Query =
-                string.Format(
-                    @"SELECT [System.Id], [{0}] FROM WorkItems WHERE [System.TeamProject] = @TeamProject {1} ORDER BY {2}",
-                     me.Target.Config.ReflectedWorkItemIDFieldName,
-                    _config.QueryBit,
-                    _config.OrderBit
-                    );
+                $@"SELECT [System.Id], [{me.Target.Config.ReflectedWorkItemIDFieldName}] FROM WorkItems WHERE [System.TeamProject] = @TeamProject {_config.QueryBit} ORDER BY {_config.OrderBit}";
             var targetFoundItems = targetQuery.Execute();
             var targetFoundIds = (from WorkItem twi in targetFoundItems select targetStore.GetReflectedWorkItemId(twi, me.Target.Config.ReflectedWorkItemIDFieldName)).ToList();
             //////////////////////////////////////////////////////////
@@ -577,7 +570,7 @@ namespace VstsSyncMigrator.Engine
             return sourceWorkItems;
         }
 
-        NodeDetecomatic _nodeOMatic;
+        private NodeDetecomatic _nodeOMatic;
 
         private string GetNewNodeName(string oldNodeName, string oldProjectName, string newProjectName, WorkItemStore newStore, string nodePath)
         {
@@ -587,7 +580,7 @@ namespace VstsSyncMigrator.Engine
             }
 
             // Replace project name with new name (if necessary) and inject nodePath (Area or Iteration) into path for node validation
-            string newNodeName = "";
+            var newNodeName = "";
             if (_config.PrefixProjectToNodes)
             {
                 newNodeName = $@"{newProjectName}\{nodePath}\{oldNodeName}";
@@ -608,7 +601,9 @@ namespace VstsSyncMigrator.Engine
             // Validate the node exists
             if (!_nodeOMatic.NodeExists(newNodeName))
             {
-                Trace.WriteLine(string.Format("The Node '{0}' does not exist, leaving as '{1}'. This may be because it has been renamed or moved and no longer exists, or that you have not migrateed the Node Structure yet.", newNodeName, newProjectName));
+                Trace.WriteLine(
+                    $"The Node '{newNodeName}' does not exist, leaving as '{newProjectName}'. This may be because it has been renamed or moved and no longer exists, or that you have not migrateed the Node Structure yet."
+                );
                 newNodeName = newProjectName;
             }
 
@@ -647,11 +642,11 @@ namespace VstsSyncMigrator.Engine
             {
                 if (f.Value == null)
                 {
-                    history.AppendLine(string.Format("{0}: null<br />", f.Name));
+                    history.AppendLine($"{f.Name}: null<br />");
                 }
                 else
                 {
-                    history.AppendLine(string.Format("{0}: {1}<br />", f.Name, f.Value.ToString()));
+                    history.AppendLine($"{f.Name}: {f.Value.ToString()}<br />");
                 }
 
             }
@@ -694,7 +689,7 @@ namespace VstsSyncMigrator.Engine
                 TraceWriteLine(sourceWorkItem, $"Links {sourceWorkItem.Links.Count} | LinkMigrator:{_config.LinkMigration}");
                 workItemLinkOMatic.MigrateLinks(sourceWorkItem, sourceStore, targetWorkItem, targetStore, save);
                 AddMetric("RelatedLinkCount", processWorkItemMetrics, targetWorkItem.Links.Count);
-                int fixedLinkCount = repoOMatic.FixExternalLinks(targetWorkItem, targetStore, sourceWorkItem, save);
+                var fixedLinkCount = repoOMatic.FixExternalLinks(targetWorkItem, targetStore, sourceWorkItem, save);
                 AddMetric("FixedGitLinkCount", processWorkItemMetrics, fixedLinkCount);
             }
         }
@@ -716,7 +711,7 @@ namespace VstsSyncMigrator.Engine
         {
             //Make sure that the ReflectedWorkItemId field name specified in the config exists in the target process, preferably on each work item type
             var fields = _witClient.GetFieldsAsync(me.Target.Config.Project).Result;
-            bool rwiidFieldExists = fields.Any(x => x.ReferenceName == me.Target.Config.ReflectedWorkItemIDFieldName || x.Name == me.Target.Config.ReflectedWorkItemIDFieldName);
+            var rwiidFieldExists = fields.Any(x => x.ReferenceName == me.Target.Config.ReflectedWorkItemIDFieldName || x.Name == me.Target.Config.ReflectedWorkItemIDFieldName);
             Debug.WriteLine($"Found {fields.Count.ToString("n0")} work item fields.");
             if (rwiidFieldExists)
                 Trace.WriteLine($"Found '{me.Target.Config.ReflectedWorkItemIDFieldName}' in this project, proceeding.");
@@ -738,9 +733,9 @@ namespace VstsSyncMigrator.Engine
 
     public class NodeDetecomatic
     {
-        ICommonStructureService _commonStructure;
-        List<string> _foundNodes = new List<string>();
-        WorkItemStore _store;
+        private ICommonStructureService _commonStructure;
+        private List<string> _foundNodes = new List<string>();
+        private WorkItemStore _store;
 
         public NodeDetecomatic(WorkItemStore store)
         {

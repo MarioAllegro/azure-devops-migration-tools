@@ -73,7 +73,7 @@ namespace VstsSyncMigrator.Core.Execution.OMatics
                 }
                 catch (Exception)
                 {
-                    Trace.WriteLine(string.Format(" ERROR: Unable to delete folder {0}", targetWorkItem.Id));
+                    Trace.WriteLine($" ERROR: Unable to delete folder {targetWorkItem.Id}");
                 }
             }            
         }
@@ -87,7 +87,7 @@ namespace VstsSyncMigrator.Core.Execution.OMatics
             string fpath = Path.Combine(exportpath, fname);
             if (!File.Exists(fpath))
             {
-                Trace.Write(string.Format("...downloading {0} to {1}", fname, exportpath));
+                Trace.Write($"...downloading {fname} to {exportpath}");
                 try
                 {
                     var fileLocation = _server.DownloadFile(wia.Id);
@@ -123,7 +123,9 @@ namespace VstsSyncMigrator.Core.Execution.OMatics
                 }
                 else
                 {
-                    Trace.WriteLine(string.Format(" [SKIP] WorkItem {0} already contains attachment {1}", targetWorkItem.Id, filepath));
+                    Trace.WriteLine(
+                        $" [SKIP] WorkItem {targetWorkItem.Id} already contains attachment {filepath}"
+                    );
                 }
             } else
             {

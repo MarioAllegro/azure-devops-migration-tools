@@ -40,13 +40,9 @@ namespace VstsSyncMigrator.Engine
             var targetQuery = new TfsQueryContext(targetStore);
             targetQuery.AddParameter("TeamProject", me.Target.Config.Project);
             targetQuery.Query =
-                string.Format(
-                    @"SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = @TeamProject {0} ORDER BY {1}",
-                    _config.QueryBit,
-                    _config.OrderBit
-                    );
+                $@"SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = @TeamProject {_config.QueryBit} ORDER BY {_config.OrderBit}";
             WorkItemCollection workitems = targetQuery.Execute();
-            Trace.WriteLine(string.Format("Update {0} work items?", workitems.Count));
+            Trace.WriteLine($"Update {workitems.Count} work items?");
             //////////////////////////////////////////////////
             int current = workitems.Count;
             int count = 0;
@@ -73,12 +69,12 @@ namespace VstsSyncMigrator.Engine
                 count++;
                 TimeSpan average = new TimeSpan(0, 0, 0, 0, (int) (elapsedms / count));
                 TimeSpan remaining = new TimeSpan(0, 0, 0, 0, (int) (average.TotalMilliseconds * current));
-                Trace.WriteLine(string.Format("Average time of {0} per work item and {1} estimated to completion",
-                    string.Format(@"{0:s\:fff} seconds", average),
-                    string.Format(@"{0:%h} hours {0:%m} minutes {0:s\:fff} seconds", remaining)));
+                Trace.WriteLine(
+                    $"Average time of {$@"{average:s\:fff} seconds"} per work item and {string.Format(@"{0:%h} hours {0:%m} minutes {0:s\:fff} seconds", remaining)} estimated to completion"
+                );
 
             }
-            Trace.WriteLine(string.Format("Did not find old repo for {0} links?", noteFound));
+            Trace.WriteLine($"Did not find old repo for {noteFound} links?");
             //////////////////////////////////////////////////
             stopwatch.Stop();
             Console.WriteLine(@"DONE in {0:%h} hours {0:%m} minutes {0:s\:fff} seconds", stopwatch.Elapsed);

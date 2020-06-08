@@ -33,7 +33,7 @@ namespace VstsSyncMigrator.ConsoleApp
     public class Program
     {
         [Verb("init", HelpText = "Creates initial config file")]
-        class InitOptions
+        private class InitOptions
         {
             [Option('c', "config", Required = false, HelpText = "Configuration file to be processed.")]
             public string ConfigFile { get; set; }
@@ -49,7 +49,7 @@ namespace VstsSyncMigrator.ConsoleApp
         }
 
         [Verb("execute", HelpText = "Record changes to the repository.")]
-        class RunOptions
+        private class RunOptions
         {
             [Option('c', "config", Required = true, HelpText = "Configuration file to be processed.")]
             public string ConfigFile { get; set; }
@@ -76,8 +76,8 @@ namespace VstsSyncMigrator.ConsoleApp
             public string ChangeSetMappingFile { get; set; }
         }
 
-        static DateTime startTime = DateTime.Now;
-        static Stopwatch mainTimer = new Stopwatch();
+        private static DateTime startTime = DateTime.Now;
+        private static Stopwatch mainTimer = new Stopwatch();
 
 
         public static int Main(string[] args)
@@ -86,26 +86,24 @@ namespace VstsSyncMigrator.ConsoleApp
             Telemetry.Current.TrackEvent("ApplicationStart");
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
             //////////////////////////////////////////////////
-            string logsPath = CreateLogsPath();
+            var logsPath = CreateLogsPath();
             //////////////////////////////////////////////////
             Trace.Listeners.Add(new TextWriterTraceListener(Console.Out));
             var logPath = Path.Combine(logsPath, "migration.log");
             Trace.Listeners.Add(new TextWriterTraceListener(logPath, "myListener"));
             Console.WriteLine("Writing log to " + logPath);
             //////////////////////////////////////////////////
-            Version thisVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+            var thisVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
            
-            Trace.WriteLine(string.Format("Running version detected as {0}", thisVersion), "[Info]");
+            Trace.WriteLine($"Running version detected as {thisVersion}", "[Info]");
             if (IsOnline())
             {
-                Version latestVersion = GetLatestVersion();
-                Trace.WriteLine(string.Format("Latest version detected as {0}", latestVersion), "[Info]");
+                var latestVersion = GetLatestVersion();
+                Trace.WriteLine($"Latest version detected as {latestVersion}", "[Info]");
                 if (latestVersion > thisVersion)
                 {
                     Trace.WriteLine(
-                        string.Format("You are currently running version {0} and a newer version ({1}) is available. You should upgrade now using Chocolatey command 'choco upgrade vsts-sync-migrator' from the command line.",
-                        thisVersion, latestVersion
-                        ),
+                        $"You are currently running version {thisVersion} and a newer version ({latestVersion}) is available. You should upgrade now using Chocolatey command 'choco upgrade vsts-sync-migrator' from the command line.",
                         "[Warning]");
 #if !DEBUG
 
@@ -119,14 +117,14 @@ namespace VstsSyncMigrator.ConsoleApp
                 }
             }
             
-            Trace.WriteLine(string.Format("Telemetry Enabled: {0}", Telemetry.Current.IsEnabled().ToString()), "[Info]");
+            Trace.WriteLine($"Telemetry Enabled: {Telemetry.Current.IsEnabled().ToString()}", "[Info]");
             Trace.WriteLine("Telemetry Note: We use Application Insights to collect telemetry on performance & feature usage for the tools to help our developers target features. This data is tied to a session ID that is generated and shown in the logs. This can help with debugging.");
-            Trace.WriteLine(string.Format("SessionID: {0}", Telemetry.Current.Context.Session.Id), "[Info]");
-            Trace.WriteLine(string.Format("User: {0}", Telemetry.Current.Context.User.Id), "[Info]");
-            Trace.WriteLine(string.Format("Start Time: {0}", startTime.ToUniversalTime().ToLocalTime()), "[Info]");
+            Trace.WriteLine($"SessionID: {Telemetry.Current.Context.Session.Id}", "[Info]");
+            Trace.WriteLine($"User: {Telemetry.Current.Context.User.Id}", "[Info]");
+            Trace.WriteLine($"Start Time: {startTime.ToUniversalTime().ToLocalTime()}", "[Info]");
             AsciiLogo(thisVersion);
             //////////////////////////////////////////////////
-            int result = (int)Parser.Default.ParseArguments<InitOptions, RunOptions, ExportADGroupsOptions>(args).MapResult(
+            var result = (int)Parser.Default.ParseArguments<InitOptions, RunOptions, ExportADGroupsOptions>(args).MapResult(
                 (InitOptions opts) => RunInitAndReturnExitCode(opts),
                 (RunOptions opts) => RunExecuteAndReturnExitCode(opts),
                 (ExportADGroupsOptions opts) => ExportADGroupsCommand.Run(opts, logsPath),
@@ -144,8 +142,8 @@ namespace VstsSyncMigrator.ConsoleApp
                 // Allow time for flushing:
                 System.Threading.Thread.Sleep(1000);
             }
-            Trace.WriteLine(string.Format("Duration: {0}", mainTimer.Elapsed.ToString("c")), "[Info]");
-            Trace.WriteLine(string.Format("End Time: {0}", DateTime.Now.ToUniversalTime().ToLocalTime()), "[Info]");
+            Trace.WriteLine($"Duration: {mainTimer.Elapsed.ToString("c")}", "[Info]");
+            Trace.WriteLine($"End Time: {DateTime.Now.ToUniversalTime().ToLocalTime()}", "[Info]");
 #if DEBUG
             Console.ReadKey();
 #endif
@@ -154,7 +152,7 @@ namespace VstsSyncMigrator.ConsoleApp
 
         private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
-            ExceptionTelemetry excTelemetry = new ExceptionTelemetry((Exception)e.ExceptionObject);
+            var excTelemetry = new ExceptionTelemetry((Exception)e.ExceptionObject);
             excTelemetry.SeverityLevel = SeverityLevel.Critical;
             excTelemetry.HandledAt = ExceptionHandledAt.Unhandled;
             Telemetry.Current.TrackException(excTelemetry);
@@ -214,9 +212,9 @@ namespace VstsSyncMigrator.ConsoleApp
 
             if (!string.IsNullOrWhiteSpace(opts.ChangeSetMappingFile))
             {
-                using (System.IO.StreamReader file = new System.IO.StreamReader(opts.ChangeSetMappingFile))
+                using (var file = new System.IO.StreamReader(opts.ChangeSetMappingFile))
                 {
-                    string line = string.Empty;
+                    var line = string.Empty;
                     while ((line = file.ReadLine()) != null)
                     {
                         if (string.IsNullOrEmpty(line))
@@ -227,7 +225,7 @@ namespace VstsSyncMigrator.ConsoleApp
                         var split = line.Split('-');
                         if (split == null
                             || split.Length != 2
-                            || !int.TryParse(split[0], out int changesetId))
+                            || !int.TryParse(split[0], out var changesetId))
                         {
                             continue;
                         }
@@ -247,13 +245,13 @@ namespace VstsSyncMigrator.ConsoleApp
         private static object RunInitAndReturnExitCode(InitOptions opts)
         {
             Telemetry.Current.TrackEvent("InitCommand");
-            string configFile = opts.ConfigFile;
+            var configFile = opts.ConfigFile;
             if (configFile.IsEmpty())
             {
                 configFile = "configuration.json";
             }
             Telemetry.Current.TrackEvent("InitCommand");
-            Trace.WriteLine(String.Format("ConfigFile: {0}", configFile), "[Info]");
+            Trace.WriteLine($"ConfigFile: {configFile}", "[Info]");
             if (File.Exists(configFile))
             {
                 Trace.WriteLine("Deleting old configuration.json reference file", "[Info]");
@@ -261,7 +259,7 @@ namespace VstsSyncMigrator.ConsoleApp
             }
             if (!File.Exists(configFile))
             {
-                Trace.WriteLine(string.Format("Populating config with {0}", opts.Options.ToString()), "[Info]");
+                Trace.WriteLine($"Populating config with {opts.Options.ToString()}", "[Info]");
                 EngineConfiguration config;
                 switch (opts.Options)
                 {
@@ -276,10 +274,10 @@ namespace VstsSyncMigrator.ConsoleApp
                         break;
                 }
 
-                string json = JsonConvert.SerializeObject(config, Formatting.Indented,
+                var json = JsonConvert.SerializeObject(config, Formatting.Indented,
                     new FieldMapConfigJsonConverter(),
                     new ProcessorConfigJsonConverter());
-                StreamWriter sw = new StreamWriter(configFile);
+                var sw = new StreamWriter(configFile);
                 sw.WriteLine(json);
                 sw.Close();
                 Trace.WriteLine("New configuration.json file has been created", "[Info]");
@@ -289,17 +287,17 @@ namespace VstsSyncMigrator.ConsoleApp
 
         private static Version GetLatestVersion()
         {
-            DateTime startTime = DateTime.Now;
-            Stopwatch mainTimer = Stopwatch.StartNew();
+            var startTime = DateTime.Now;
+            var mainTimer = Stopwatch.StartNew();
             //////////////////////////////////
-            string packageID = "vsts-sync-migrator";
-            SemanticVersion version = SemanticVersion.Parse("0.0.0.0");
-            bool sucess = false;
+            var packageID = "vsts-sync-migrator";
+            var version = SemanticVersion.Parse("0.0.0.0");
+            var sucess = false;
             try
             {
                 //Connect to the official package repository
-                IPackageRepository repo = PackageRepositoryFactory.Default.CreateRepository("https://chocolatey.org/api/v2/");
-                SemanticVersion latestPackageVersion = repo.FindPackagesById(packageID).Max(p => p.Version);
+                var repo = PackageRepositoryFactory.Default.CreateRepository("https://chocolatey.org/api/v2/");
+                var latestPackageVersion = repo.FindPackagesById(packageID).Max(p => p.Version);
                 if (latestPackageVersion != null)
                 {
                     version = latestPackageVersion;
@@ -319,19 +317,19 @@ namespace VstsSyncMigrator.ConsoleApp
 
         private static bool IsOnline()
         {
-            DateTime startTime = DateTime.Now;
-            Stopwatch mainTimer = Stopwatch.StartNew();
+            var startTime = DateTime.Now;
+            var mainTimer = Stopwatch.StartNew();
             //////////////////////////////////
-            bool isOnline = false;
-            string responce = "none";
+            var isOnline = false;
+            var responce = "none";
             try
             {
-                Ping myPing = new Ping();
-                String host = "8.8.4.4";
-                byte[] buffer = new byte[32];
-                int timeout = 1000;
-                PingOptions pingOptions = new PingOptions();
-                PingReply reply = myPing.Send(host, timeout, buffer, pingOptions);
+                var myPing = new Ping();
+                var host = "8.8.4.4";
+                var buffer = new byte[32];
+                var timeout = 1000;
+                var pingOptions = new PingOptions();
+                var reply = myPing.Send(host, timeout, buffer, pingOptions);
                 responce = reply.Status.ToString();
                 if (reply.Status == IPStatus.Success)
                 {
@@ -354,7 +352,7 @@ namespace VstsSyncMigrator.ConsoleApp
         private static string CreateLogsPath()
         {
             string exportPath;
-            string assPath = System.Reflection.Assembly.GetExecutingAssembly().Location;
+            var assPath = System.Reflection.Assembly.GetExecutingAssembly().Location;
             exportPath = Path.Combine(Path.GetDirectoryName(assPath), "logs", DateTime.Now.ToString("yyyyMMddHHmmss"));
             if (!Directory.Exists(exportPath))
             {

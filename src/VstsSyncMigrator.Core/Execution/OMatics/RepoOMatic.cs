@@ -15,14 +15,14 @@ namespace VstsSyncMigrator.Core.Execution.OMatics
 {
     public class RepoOMatic
     {
-        MigrationEngine migrationEngine;
-        GitRepositoryService sourceRepoService;
-        IList<GitRepository> sourceRepos;
-        IList<GitRepository> allSourceRepos;
-        GitRepositoryService targetRepoService;
-        IList<GitRepository> targetRepos;
-        IList<GitRepository> allTargetRepos;
-        List<string> gitWits;
+        private MigrationEngine migrationEngine;
+        private GitRepositoryService sourceRepoService;
+        private IList<GitRepository> sourceRepos;
+        private IList<GitRepository> allSourceRepos;
+        private GitRepositoryService targetRepoService;
+        private IList<GitRepository> targetRepos;
+        private IList<GitRepository> allTargetRepos;
+        private List<string> gitWits;
 
         public RepoOMatic(MigrationEngine me)
         {
@@ -45,16 +45,16 @@ namespace VstsSyncMigrator.Core.Execution.OMatics
 
         public int FixExternalLinks(WorkItem targetWorkItem, WorkItemStoreContext targetStore, WorkItem sourceWorkItem, bool save = true)
         {
-            List<ExternalLink> newEL = new List<ExternalLink>();
-            List<ExternalLink> removeEL = new List<ExternalLink>();
-            int count = 0;
+            var newEL = new List<ExternalLink>();
+            var removeEL = new List<ExternalLink>();
+            var count = 0;
             foreach (Link l in targetWorkItem.Links)
             {
                 if (l is ExternalLink && gitWits.Contains(l.ArtifactLinkType.Name))
                 {
-                    ExternalLink el = (ExternalLink)l;
+                    var el = (ExternalLink)l;
 
-                    GitRepositoryInfo sourceRepoInfo = GitRepositoryInfo.Create(el, sourceRepos, migrationEngine, sourceWorkItem?.Project?.Name);
+                    var sourceRepoInfo = GitRepositoryInfo.Create(el, sourceRepos, migrationEngine, sourceWorkItem?.Project?.Name);
                     
                     // if sourceRepo is null ignore this link and keep processing further links
                     if (sourceRepoInfo == null) 
@@ -79,11 +79,11 @@ namespace VstsSyncMigrator.Core.Execution.OMatics
 
                     if (sourceRepoInfo.GitRepo != null)
                     {
-                        string targetRepoName = GetTargetRepoName(migrationEngine.GitRepoMappings, sourceRepoInfo);
-                        string sourceProjectName = sourceRepoInfo?.GitRepo?.ProjectReference?.Name ?? migrationEngine.Target.Config.Project;
-                        string targetProjectName = migrationEngine.Target.Config.Project;
+                        var targetRepoName = GetTargetRepoName(migrationEngine.GitRepoMappings, sourceRepoInfo);
+                        var sourceProjectName = sourceRepoInfo?.GitRepo?.ProjectReference?.Name ?? migrationEngine.Target.Config.Project;
+                        var targetProjectName = migrationEngine.Target.Config.Project;
 
-                        GitRepositoryInfo targetRepoInfo = GitRepositoryInfo.Create(targetRepoName, sourceRepoInfo, targetRepos);
+                        var targetRepoInfo = GitRepositoryInfo.Create(targetRepoName, sourceRepoInfo, targetRepos);
                         // if repo was not found in the target project, try to find it in the whole target project collection
                         if (targetRepoInfo.GitRepo == null)
                         {
@@ -123,7 +123,9 @@ namespace VstsSyncMigrator.Core.Execution.OMatics
                                     break;
 
                                 default:
-                                    Trace.WriteLine(String.Format("Skipping unsupported link type {0}", l.ArtifactLinkType.Name));
+                                    Trace.WriteLine(
+                                        $"Skipping unsupported link type {l.ArtifactLinkType.Name}"
+                                    );
                                     break;
                             }
 
@@ -151,7 +153,7 @@ namespace VstsSyncMigrator.Core.Execution.OMatics
                 }
             }
             // add and remove
-            foreach (ExternalLink eln in newEL)
+            foreach (var eln in newEL)
             {
                 try
                 {
@@ -165,7 +167,7 @@ namespace VstsSyncMigrator.Core.Execution.OMatics
                     // eat exception as sometimes TFS thinks this is an attachment
                 }
             }
-            foreach (ExternalLink elr in removeEL)
+            foreach (var elr in removeEL)
             {
                 if (targetWorkItem.Links.Contains(elr))
                 {
@@ -243,7 +245,7 @@ namespace VstsSyncMigrator.Core.Execution.OMatics
 
             //vstfs:///VersionControl/Changeset/{id}
             var changeSetIdPart = gitExternalLink.LinkedArtifactUri.Substring(gitExternalLink.LinkedArtifactUri.LastIndexOf('/') + 1);
-            if (!int.TryParse(changeSetIdPart, out int changeSetId))
+            if (!int.TryParse(changeSetIdPart, out var changeSetId))
             {
                 return null;
             }
@@ -294,13 +296,13 @@ namespace VstsSyncMigrator.Core.Execution.OMatics
             string repoID;
             GitRepository gitRepo;
             //vstfs:///Git/Commit/25f94570-e3e7-4b79-ad19-4b434787fd5a%2f50477259-3058-4dff-ba4c-e8c179ec5327%2f41dd2754058348d72a6417c0615c2543b9b55535
-            string guidbits = gitExternalLink.LinkedArtifactUri.Substring(gitExternalLink.LinkedArtifactUri.LastIndexOf('/') + 1);
-            string[] bits = Regex.Split(guidbits, "%2f", RegexOptions.IgnoreCase);
+            var guidbits = gitExternalLink.LinkedArtifactUri.Substring(gitExternalLink.LinkedArtifactUri.LastIndexOf('/') + 1);
+            var bits = Regex.Split(guidbits, "%2f", RegexOptions.IgnoreCase);
             repoID = bits[1];
             if (bits.Count() >= 3)
             {
                 commitID = $"{bits[2]}";
-                for (int i = 3; i < bits.Count(); i++)
+                for (var i = 3; i < bits.Count(); i++)
                 {
                     commitID += $"%2f{bits[i]}";
                 }

@@ -66,8 +66,10 @@ namespace VstsSyncMigrator.Engine
                 
                 try
                 {
-                    Trace.WriteLine(string.Format("Connected to {0} ", _Collection.Uri.ToString()));
-                    Trace.WriteLine(string.Format("validating security for {0} ", _Collection.AuthorizedIdentity.ToString()));
+                    Trace.WriteLine($"Connected to {_Collection.Uri.ToString()} ");
+                    Trace.WriteLine(
+                        $"validating security for {_Collection.AuthorizedIdentity.ToString()} "
+                    );
                     _Collection.EnsureAuthenticated();
                     connectionTimer.Stop();
                     Telemetry.Current.TrackDependency("TeamService", "EnsureAuthenticated", start, connectionTimer.Elapsed, true);
